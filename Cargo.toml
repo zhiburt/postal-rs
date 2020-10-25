@@ -3,6 +3,7 @@ name = "postal-rs"
 version = "0.1.0"
 authors = ["Maxim Zhiburt <zhiburt@gmail.com>"]
 edition = "2018"
+description = "A libary which provides an API to Postal"
 readme = "README.md"
 repository = "https://github.com/zhiburt/postal-rs"
 license = "MIT"
