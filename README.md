@@ -1,6 +1,7 @@
-# postal-rs
+[![Crates.io](https://img.shields.io/crates/v/postal-rs.svg?style=for-the-badge)](https://crates.io/crates/postal-rs)
+[![Documentation](https://img.shields.io/badge/docs.rs-postal_rs-blue?style=for-the-badge)](https://docs.rs/postal-rs)
 
-A libarry which wraps HTTP API of [Postal](https://postal.atech.media/).
+`postal-rs` is a libarry which wraps HTTP API of [Postal](https://postal.atech.media/).
 It uses https://krystal.github.io/postal-api/controllers/messages.html as a source of documentation.
 
 # Get started
