@@ -1,3 +1,33 @@
+//! The crate provides an interface to [Postal]'s http [API].
+//!
+//! # Examples
+//!
+//! ```no_run
+//! use postal_rs::{Client, DetailsInterest, Message, SendResult};
+//! use std::env;
+//! 
+//! #[tokio::main]
+//! async fn main() {
+//!    let address = env::var("POSTAL_ADDRESS").unwrap_or_default();
+//!    let token = env::var("POSTAL_TOKEN").unwrap_or_default();
+//!
+//!    let message = Message::default()
+//!        .to(&["example@gmail.com".to_owned()])
+//!        .from("test@yourserver.io")
+//!        .subject("Hello World")
+//!        .text("A test message");
+//!    let client = Client::new(address, token).unwrap();
+//!    let _ = client
+//!        .send(message)
+//!        .await
+//!        .unwrap();
+//!}
+//!
+//! ```
+//!
+//! [Postal]: https://postal.atech.media/
+//! [API]: https://github.com/postalhq/postal/wiki/Using-the-API
+
 mod error;
 
 pub use error::PostalError;
@@ -8,6 +38,7 @@ use serde_json::Value as Json;
 use std::collections::HashMap;
 use url::Url;
 
+/// Client holds a session information
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Client {
     address: Url,
@@ -15,6 +46,7 @@ pub struct Client {
 }
 
 impl Client {
+    /// Constructs a new instance of client
     pub fn new<U, S>(url: U, token: S) -> Result<Self, PostalError>
     where
         U: AsRef<str>,
@@ -29,6 +61,7 @@ impl Client {
         })
     }
 
+    /// Sends a message to Postal
     pub async fn send<M: Into<Message>>(&self, message: M) -> Result<Vec<SendResult>, PostalError> {
         let address = self.address.join("/api/v1/send/message")?;
         let message = message.into();
@@ -44,6 +77,7 @@ impl Client {
         handle_send(res).await
     }
 
+    /// Sends a standart SMTP message to Postal
     pub async fn send_raw<M: Into<RawMessage>>(
         &self,
         message: M,
@@ -62,6 +96,13 @@ impl Client {
         handle_send(res).await
     }
 
+    /// Asks a Postal server to provide an information details
+    /// about a message
+    ///
+    /// By default it provides a limited information.
+    /// To increase this volume you can specify expansions via [DetailsInterest]
+    ///
+    /// [DetailsInterest]: ./struct.DetailsInterest.html
     pub async fn get_message_details<I: Into<DetailsInterest>>(
         &self,
         interest: I,
@@ -86,6 +127,7 @@ impl Client {
         Ok(data)
     }
 
+    /// Obtains a delivery information according to a message.
     pub async fn get_message_deliveries(
         &self,
         id: MessageHash,
@@ -151,37 +193,39 @@ fn check_responce<T>(data: api_structures::Responce<T>) -> Result<T, PostalError
     }
 }
 
-// todo: find out the corect type of a hash
+/// MessageHash represents a hash which can be used to
+/// get a different information bout a message.
 pub type MessageHash = u64;
 
+/// Message represents a email which can be sent
 #[derive(Debug, Eq, PartialEq, Clone, Default, Deserialize, Serialize)]
 pub struct Message {
     ///The e-mail addresses of the recipients (max 50)
-    to: Option<Vec<String>>,
+    pub to: Option<Vec<String>>,
     /// The e-mail addresses of any CC contacts (max 50)
-    cc: Option<Vec<String>>,
+    pub cc: Option<Vec<String>>,
     /// The e-mail addresses of any BCC contacts (max 50)
-    bcc: Option<Vec<String>>,
+    pub bcc: Option<Vec<String>>,
     /// The e-mail address for the From header
-    from: Option<String>,
+    pub from: Option<String>,
     /// The e-mail address for the Sender header
-    sender: Option<String>,
+    pub sender: Option<String>,
     /// The subject of the e-mail
-    subject: Option<String>,
+    pub subject: Option<String>,
     /// The tag of the e-mail
-    tag: Option<String>,
+    pub tag: Option<String>,
     /// Set the reply-to address for the mail
-    reply_to: Option<String>,
+    pub reply_to: Option<String>,
     /// The plain text body of the e-mail
-    plain_body: Option<String>,
+    pub plain_body: Option<String>,
     /// The HTML body of the e-mail
-    html_body: Option<String>,
+    pub html_body: Option<String>,
     /// An array of attachments for this e-mail
-    attachments: Option<Vec<Vec<u8>>>,
+    pub attachments: Option<Vec<Vec<u8>>>,
     /// A hash of additional headers
-    headers: Option<MessageHash>,
+    pub headers: Option<MessageHash>,
     /// Is this message a bounce?
-    bounce: Option<bool>,
+    pub bounce: Option<bool>,
 }
 
 impl Message {
@@ -211,6 +255,8 @@ impl Message {
     }
 }
 
+/// RawMessage allows you to send us a raw RFC2822 formatted message along with
+/// the recipients that it should be sent to.
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct RawMessage {
     /// The address that should be logged as sending the message
@@ -234,6 +280,8 @@ impl RawMessage {
     }
 }
 
+/// DetailsInterest contains an options which can be used to
+/// turn on expansions while obtaining details of a message.
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct DetailsInterest {
     id: MessageHash,
@@ -373,9 +421,13 @@ impl Into<Json> for DetailsInterest {
     }
 }
 
+/// SendResult represent a result of sending request
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct SendResult {
+    /// An email To which an email was sent
     pub to: String,
+    /// A message id which can be used to retrieve message details
+    /// and message deliveries
     pub id: MessageHash,
 }
 
@@ -415,8 +467,4 @@ mod api_structures {
         pub code: String,
         pub message: String,
     }
-
-    // HashMap<String, Json>
-
-    // Vec<HashMap<String, Json>>
 }

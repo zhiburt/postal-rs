@@ -1,5 +1,6 @@
 use thiserror::Error;
 
+/// PostalError denotes crate erorrs
 #[derive(Error, Debug)]
 pub enum PostalError {
     #[error("data store disconnected")]
